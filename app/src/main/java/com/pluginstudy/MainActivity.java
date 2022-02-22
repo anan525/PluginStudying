@@ -37,13 +37,13 @@ public class MainActivity extends AppCompatActivity {
         rvList.setAdapter(apksAdapter);
         apksAdapter.setOnItemClickListener((posiont, apkBean) -> {
             Intent intent = new Intent(MainActivity.this, ProxyActivity.class);
-            intent.putExtra("className", apkBean.getApkName());
+            intent.putExtra("packageName", apkBean.getPackageName());
             startActivity(intent);
         });
 
 
         ApkBean apkBean = new ApkBean(R.mipmap.icon_jisuanqi, "计算器"
-                , "calander.apk");
+                , "calander.apk", "com.voyah.plugin_calanda");
 
         RxPermissions rxPermissions = new RxPermissions(this);
 
@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
                             String apkName = apkBean.getApkName();
                             String s = PluginManager.getInstance().loadApks(MainActivity.this
-                                    , apkName);
+                                    , apkBean);
                             if (!TextUtils.isEmpty(s) && !pluginList.contains(apkBean)) {
                                 //更新view
                                 pluginList.add(apkBean);

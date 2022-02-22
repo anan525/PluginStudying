@@ -2,12 +2,12 @@ package com.pluginrule;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
@@ -69,7 +69,7 @@ public class PluginManager {
     }
 
 
-    public String loadApks(Context context, String name) {
+    public String loadApks(Context context, ApkBean apkBean) {
         pluginBeanList.clear();
         //loadapk
         try {
@@ -91,9 +91,9 @@ public class PluginManager {
                 boolean mkdirs = apkDir.mkdirs();
                 Log.e("ces", "" + mkdirs);
             }
-            String path = dir + File.separator + name;
+            String path = dir + File.separator + apkBean.getApkName();
             File apkFile = new File(path);
-            if (!apkDir.exists()) {
+            if (!apkFile.exists()) {
                 return null;
             }
             //加载
@@ -107,7 +107,7 @@ public class PluginManager {
 
             PluginBean pluginBean = new PluginBean(path, dexClassLoader, assetManager, pluginResource);
 
-            pluginBeanList.put(name, pluginBean);
+            pluginBeanList.put(apkBean.getPackageName(), pluginBean);
 
 
             return path;
@@ -119,22 +119,42 @@ public class PluginManager {
     }
 
 
-    public PluginBean getPluginBeanList(String name) {
+    public PluginBean getPluginBeanList(String packageName) {
 
-        return pluginBeanList.get(name);
+        return pluginBeanList.get(packageName);
     }
 
 
-    public Object loadPluginActivity(Activity activity, String name) {
-        PluginBean pluginBean = pluginBeanList.get(name);
+    public Object loadPluginActivity(Activity activity, String packageName, String className) {
+        PluginBean pluginBean = pluginBeanList.get(packageName);
         if (pluginBean != null) {
             DexClassLoader dexClassLoader = pluginBean.getDexClassLoader();
-
             PackageManager packageManager = activity.getPackageManager();
             PackageInfo packageArchiveInfo = packageManager.getPackageArchiveInfo(pluginBean.getPath(), PackageManager.GET_ACTIVITIES);
-            ActivityInfo activityInfo = packageArchiveInfo.activities[0];
+            ActivityInfo[] activities = packageArchiveInfo.activities;
+            ActivityInfo targetInfor = null;
+            if (TextUtils.isEmpty(className)) {
+                //如果是空的，说明加载启动页
+                //xml里面要把启动页放在第一个
+                targetInfor = activities[0];
+            } else {
+                for (ActivityInfo activityInfo : activities) {
+                    int category = activityInfo.applicationInfo.category;
+                    if (activityInfo.name.equals(className)) {
+                        targetInfor = activityInfo;
+                    }
+                }
+            }
+            if (targetInfor == null) {
+                try {
+                    throw new Exception("没找到指定的activity");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
             try {
-                Class aClass = dexClassLoader.loadClass(activityInfo.name);
+                Class aClass = dexClassLoader.loadClass(targetInfor.name);
                 return aClass.newInstance();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -142,4 +162,5 @@ public class PluginManager {
         }
         return null;
     }
+
 }

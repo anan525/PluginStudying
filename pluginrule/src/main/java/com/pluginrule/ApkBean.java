@@ -38,10 +38,22 @@ public class ApkBean {
 
     private String apkName;
 
-    public ApkBean(int iconResource, String name, String apkName) {
+    private String packageName;
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public ApkBean setPackageName(String packageName) {
+        this.packageName = packageName;
+        return this;
+    }
+
+    public ApkBean(int iconResource, String name, String apkName, String packageName) {
         this.iconResource = iconResource;
         this.name = name;
         this.apkName = apkName;
+        this.packageName = packageName;
     }
 
     public String getApkName() {

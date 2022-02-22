@@ -2,7 +2,9 @@ package com.pluginrule;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -78,5 +80,15 @@ public class BaseActivity extends Activity implements ActivityInterfaces {
     @Override
     public void setContentView(int layoutResID) {
         app.setContentView(layoutResID);
+    }
+
+    @Override
+    public <T extends View> T findViewById(int id) {
+        return app.findViewById(id);
+    }
+
+    @Override
+    public void startActivity(Intent intent) {
+        app.startActivity(intent);
     }
 }

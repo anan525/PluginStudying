@@ -1,6 +1,7 @@
 package com.voyah.plugin_calanda;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -12,9 +13,12 @@ public class TopActivity extends BaseActivity {
     @SuppressLint("MissingSuperCall")
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
         setContentView(R.layout.activity_top);
 
-        Toast.makeText(app, "測試", Toast.LENGTH_SHORT).show();
+        findViewById(R.id.tv_top).setOnClickListener(l -> {
+            Intent intent = new Intent(app, SecondActivity.class);
+            startActivity(intent);
+        });
+
     }
 }
