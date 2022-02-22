@@ -19,5 +19,7 @@ V1.2: 插件内Activity的跳转
                 3.不知道怎么获取启动页，这里需要将启动页放在第一个定义
                 4.需要穿包名，因为用的是ProxyActivity，跳转的intent包名是ProxyActivity的,因此这里用string剪切最后一个“.”
                 之前的字符为包名
+V1.3：插件内占位插件
+   1.写法和activity一样
 
 

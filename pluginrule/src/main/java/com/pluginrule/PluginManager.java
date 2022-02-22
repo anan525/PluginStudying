@@ -1,10 +1,12 @@
 package com.pluginrule;
 
 import android.app.Activity;
+import android.app.Service;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.text.TextUtils;
@@ -132,35 +134,40 @@ public class PluginManager {
             PackageManager packageManager = activity.getPackageManager();
             PackageInfo packageArchiveInfo = packageManager.getPackageArchiveInfo(pluginBean.getPath(), PackageManager.GET_ACTIVITIES);
             ActivityInfo[] activities = packageArchiveInfo.activities;
-            ActivityInfo targetInfor = null;
             if (TextUtils.isEmpty(className)) {
                 //如果是空的，说明加载启动页
                 //xml里面要把启动页放在第一个
-                targetInfor = activities[0];
-            } else {
-                for (ActivityInfo activityInfo : activities) {
-                    int category = activityInfo.applicationInfo.category;
-                    if (activityInfo.name.equals(className)) {
-                        targetInfor = activityInfo;
-                    }
-                }
+                className = activities[0].name;
             }
-            if (targetInfor == null) {
-                try {
-                    throw new Exception("没找到指定的activity");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
             try {
-                Class aClass = dexClassLoader.loadClass(targetInfor.name);
+                Class aClass = dexClassLoader.loadClass(className);
                 return aClass.newInstance();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return null;
+    }
+
+
+    public Object loadPluginService(String packageName, String className) {
+        PluginBean pluginBean = pluginBeanList.get(packageName);
+        if (pluginBean != null) {
+            DexClassLoader dexClassLoader = pluginBean.getDexClassLoader();
+            try {
+                Class aClass = dexClassLoader.loadClass(className);
+                return aClass.newInstance();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public String getPackageNameFromClassName(String className) {
+        //这里需要把包名在名字里面切出来
+        int i = className.lastIndexOf(".");
+        return className.substring(0, i);
     }
 
 }

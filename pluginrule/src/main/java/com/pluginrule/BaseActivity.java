@@ -2,7 +2,9 @@ package com.pluginrule;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 
@@ -90,5 +92,15 @@ public class BaseActivity extends Activity implements ActivityInterfaces {
     @Override
     public void startActivity(Intent intent) {
         app.startActivity(intent);
+    }
+
+    @Override
+    public ComponentName startService(Intent service) {
+        return app.startService(service);
+    }
+
+    @Override
+    public boolean stopService(Intent name) {
+        return app.stopService(name);
     }
 }

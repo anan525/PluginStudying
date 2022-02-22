@@ -15,6 +15,9 @@ public class TopActivity extends BaseActivity {
     public void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.activity_top);
 
+        //这里直接开启服务
+        startService(new Intent(app, CalandaService.class));
+
         findViewById(R.id.tv_top).setOnClickListener(l -> {
             Intent intent = new Intent(app, SecondActivity.class);
             startActivity(intent);

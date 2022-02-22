@@ -4,9 +4,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 
@@ -65,13 +67,29 @@ public class ProxyActivity extends Activity {
     @Override
     public void startActivity(Intent intent) {
         String className = intent.getComponent().getClassName();
-        //这里需要把包名在名字里面切出来
-        int i = className.lastIndexOf(".");
-        String packageName = className.substring(0, i);
-
+        String packageName = PluginManager.getInstance().getPackageNameFromClassName(className);
         Intent intentTask = new Intent(this, ProxyActivity.class);
         intentTask.putExtra("className", className);
         intentTask.putExtra("packageName", packageName);
         super.startActivity(intentTask);
+    }
+
+
+    @Override
+    public ComponentName startService(Intent service) {
+        String className = service.getComponent().getClassName();
+        String packageName = PluginManager.getInstance().getPackageNameFromClassName(className);
+        Intent intentTask = new Intent(this, ProxyService.class);
+        intentTask.putExtra("className", className);
+        intentTask.putExtra("packageName", packageName);
+
+        //开启服务
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //26以上必须用startForegroundService
+            return startForegroundService(intentTask);
+        } else {
+            //26一下直接startService
+            return startService(intentTask);
+        }
     }
 }
