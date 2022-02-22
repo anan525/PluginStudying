@@ -1,2 +1,4 @@
+include ':plugin_calanda'
+include ':pluginrule'
 include ':app'
 rootProject.name = "PluginStudy"
