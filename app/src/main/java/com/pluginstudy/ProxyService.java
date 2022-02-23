@@ -65,7 +65,7 @@ public class ProxyService extends Service {
             pluginBean = PluginManager.getInstance().getPluginBeanList(packageName);
             String className = intent.getStringExtra("className");
             if (pluginBean != null) {
-                Object o = PluginManager.getInstance().loadPluginService(packageName, className);
+                Object o = PluginManager.getInstance().loadPluginClass(packageName, className);
                 if (o != null && o instanceof ServiceInterface) {
                     targetService = (ServiceInterface) o;
                     targetService.attachToService(this);

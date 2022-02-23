@@ -17,7 +17,11 @@ public class CalandaService extends BaseService {
     private Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            Log.d("CalandaService", "当前时间：" + SystemClock.currentThreadTimeMillis());
+            Intent intent = new Intent();
+            intent.setAction("com.voyah.plugin_calanda.CalandaReceiver");
+            intent.putExtra("data", "当前时间：" + SystemClock.currentThreadTimeMillis());
+            service.sendBroadcast(intent);
+
             handler.post(this);
         }
     };

@@ -2,8 +2,10 @@ package com.pluginrule;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -102,5 +104,10 @@ public class BaseActivity extends Activity implements ActivityInterfaces {
     @Override
     public boolean stopService(Intent name) {
         return app.stopService(name);
+    }
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        return app.registerReceiver(receiver, filter);
     }
 }

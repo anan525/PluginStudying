@@ -150,7 +150,7 @@ public class PluginManager {
     }
 
 
-    public Object loadPluginService(String packageName, String className) {
+    public Object loadPluginClass(String packageName, String className) {
         PluginBean pluginBean = pluginBeanList.get(packageName);
         if (pluginBean != null) {
             DexClassLoader dexClassLoader = pluginBean.getDexClassLoader();

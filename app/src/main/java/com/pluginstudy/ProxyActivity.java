@@ -4,8 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Build;
@@ -19,7 +21,7 @@ import com.pluginrule.PluginManager;
 public class ProxyActivity extends Activity {
 
     private ActivityInterfaces targetActivity;
-
+    private ProxyReceriver proxyReceriver = new ProxyReceriver();
     private PluginBean pluginBean;
 
     @Override
@@ -91,5 +93,20 @@ public class ProxyActivity extends Activity {
             //26一下直接startService
             return startService(intentTask);
         }
+    }
+
+
+    @Override
+    public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        String name = receiver.getClass().getName();
+        proxyReceriver.loadclassName(name);
+        return super.registerReceiver(proxyReceriver, filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver(proxyReceriver);
     }
 }
