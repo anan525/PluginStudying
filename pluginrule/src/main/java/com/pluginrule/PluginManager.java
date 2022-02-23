@@ -1,20 +1,23 @@
 package com.pluginrule;
 
 import android.app.Activity;
-import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import dalvik.system.DexClassLoader;
 
@@ -51,7 +54,6 @@ import dalvik.system.DexClassLoader;
 public class PluginManager {
 
     private HashMap<String, PluginBean> pluginBeanList = new HashMap<>();
-
 
     private volatile static PluginManager pluginManager;
 
@@ -111,7 +113,37 @@ public class PluginManager {
 
             pluginBeanList.put(apkBean.getPackageName(), pluginBean);
 
+            //将所有的类解析出来   scanDirTracedLI  ParsedPackage.parsePackageLite  parsePackage
+            //1.获取PackageParser
+            Class<?> mPackageParserClass = Class.forName("android.content.pm.PackageParser");
+            Object mPackageParser = mPackageParserClass.newInstance();
+            //2.PackageParser的方法parsePackage
+            Method parsePackage = mPackageParserClass.getDeclaredMethod("parsePackage", File.class, int.class);
+            //调用parsePackage 获取到package对象
+            Object mPackage = parsePackage.invoke(mPackageParser, apkFile, PackageManager.GET_ACTIVITIES);
+            //反射成员获取到所有的activity ArrayList<Activity>
+//            Field activitiesField = mPackage.getClass().getField("activities");
+//            //获取变量的值ArrayList<Activity>
+//            ArrayList mActivities = (ArrayList) activitiesField.get(mPackage);
 
+            //获取所有的receiver
+            Field receiversField = mPackage.getClass().getField("receivers");
+            ArrayList receivers = (ArrayList) receiversField.get(mPackage);
+
+            Class<?> activitys = Class.forName("android.content.pm.PackageParser$Activity");
+            Field intentsFiled = activitys.getField("intents");
+            Field infoField = activitys.getField("info");
+
+            for (Object receiver : receivers) {
+                ArrayList<IntentFilter> intentFilters = (ArrayList<IntentFilter>) intentsFiled.get(receiver);
+                ActivityInfo activityInfo = (ActivityInfo) infoField.get(receiver);
+                String name = activityInfo.name;
+                BroadcastReceiver broadcastReceiver = (BroadcastReceiver) dexClassLoader.loadClass(name).newInstance();
+
+                for (IntentFilter intentFilter : intentFilters) {
+                    context.registerReceiver(broadcastReceiver, intentFilter);
+                }
+            }
             return path;
         } catch (Exception e) {
             e.printStackTrace();

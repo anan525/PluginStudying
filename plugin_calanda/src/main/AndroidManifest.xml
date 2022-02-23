@@ -10,8 +10,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PluginStudy">
         <service android:name=".CalandaService"></service>
+
         <activity android:name=".TopActivity" />
         <activity android:name=".SecondActivity" />
+
+        <receiver android:name=".CalandaReceiver">
+            <intent-filter>
+                <action android:name="com.voyah.plugin_calanda.Static"></action>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

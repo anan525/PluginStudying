@@ -12,6 +12,5 @@ public class SecondActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        registerReceiver(new CalandaReceiver(), new IntentFilter("com.voyah.plugin_calanda.CalandaReceiver"));
     }
 }

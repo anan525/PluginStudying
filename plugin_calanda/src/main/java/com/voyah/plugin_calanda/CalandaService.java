@@ -18,7 +18,7 @@ public class CalandaService extends BaseService {
         @Override
         public void run() {
             Intent intent = new Intent();
-            intent.setAction("com.voyah.plugin_calanda.CalandaReceiver");
+            intent.setAction("com.voyah.plugin_calanda.Static");
             intent.putExtra("data", "当前时间：" + SystemClock.currentThreadTimeMillis());
             service.sendBroadcast(intent);
 
