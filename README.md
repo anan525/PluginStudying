@@ -27,3 +27,32 @@ V1.4: 插件内占位recerver和静态broadcast
         反射拿到Package的 recervices 遍历其intents然后注册
 
 
+无注册activity启动（api30）
+   1.hook IActivityTaskManager的startactivity方法 ，在其调用替换proxyactivity骗过ams
+  activity: startactivity()->startactivityforresult()------
+  Instrumentation: execStartActivity()-----------ActivityTaskManager.getservice().startactivity()
+  ActivityTaskManager:getservice()返回的是IActivityTaskManager
+hook重点在ActivityTaskManager的静态变量IActivityTaskManagerSingleton 反射获取值得到IActivityTaskManager，然后修改
+   2.hook 在handleLaunchActivity前将intent改回来
+   ams检测完后，binder通信给app,app内部是通过handler-message传递.
+   这里反射获取ActivityThread的 mh(handler对象)，handler的dispatchMessage中callback!=null直接执行mCallback.handleMessage(msg)
+   因此这里给mh设置一个callback ,就可以让handleLaunchActivity信号时候执行自己的代码了
+
+   api30时候: handleLaunchActivity()调用是在launchActivityItem
+        ams事务-->app（159）msg.obj是ClientTransaction对象，  ClientTransaction的mActivityCallbacks里面就是一个包含
+   launchActivityItem的arraylist ,反射拿到mActivityCallbacks,然后获取launchActivityItem ,反射aunchActivityItem的intent
+   将intent修改成Testactivity
+
+
+
+
+为什么onresume后才会看到并能点击activity?
+
+view的绘制过程是在类ViewRootImpl中完成
+
+   Windmanagerimpl的addview()-->-WindowManagerGlobal.addview()
+    --->new ViewRootImpl.setview()---> doTarversals()
+
+  而windmanagerimpl在handleresumeActivity()触发
+
+

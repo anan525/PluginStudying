@@ -107,6 +107,5 @@ public class ProxyActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
 
-        unregisterReceiver(proxyReceriver);
     }
 }

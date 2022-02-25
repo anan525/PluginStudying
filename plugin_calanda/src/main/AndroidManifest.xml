@@ -9,14 +9,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PluginStudy">
-        <service android:name=".CalandaService"></service>
+
+        <service android:name=".CalandaService" />
 
         <activity android:name=".TopActivity" />
         <activity android:name=".SecondActivity" />
 
         <receiver android:name=".CalandaReceiver">
             <intent-filter>
-                <action android:name="com.voyah.plugin_calanda.Static"></action>
+                <action android:name="com.voyah.plugin_calanda.Static" />
             </intent-filter>
         </receiver>
     </application>
