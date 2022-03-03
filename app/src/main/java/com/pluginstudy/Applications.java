@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
@@ -88,6 +89,9 @@ public class Applications extends Application {
     }
 
     public void hookLoadApk(String name, String packageName) throws Exception {
+        String path = getDataDir().getPath() + File.separator + "Plugins" + File.separator + name;
+        //加载资源
+        doLoadPluginLayout(path);
 
         Class<?> mActivityThreadClass = Class.forName("android.app.ActivityThread");
         Method currentActivityThreadMethod = mActivityThreadClass.
@@ -104,7 +108,35 @@ public class Applications extends Application {
 
         //设置loadedAPk
         WeakReference weakReference = new WeakReference(loadApk);
-        Object put = mpackages.put(packageName, weakReference);
+        mpackages.put(packageName, weakReference);
+
+        //************************ PackageManager.getPackageInfoAsUserCached(
+        //                        mPackageName,
+        //                        PackageManager.MATCH_DEBUG_TRIAGED_MISSING,
+        //                        UserHandle.myUserId());******************************//
+        //需要绕过getPackageInfoAsUserCached返回的packageInfo 插件会返回null
+        Method getPackageManagerMethod = mActivityThreadClass.getDeclaredMethod("getPackageManager");
+        getPackageManagerMethod.setAccessible(true);
+        Object iPackageManager = getPackageManagerMethod.invoke(null);
+
+        Class<?> iPackageManagerClass = Class.forName("android.content.pm.IPackageManager");
+        Object iPackageManagerInterface = Proxy.newProxyInstance(getClassLoader(), new Class[]{iPackageManagerClass}, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                if (method.getName().equals("getPackageInfo")) {
+                    if (args != null && args.length == 3 && args[0] instanceof String) {
+                        String mPackageName = (String) args[0];
+                        if (mPackageName.equals(packageName)) {
+                            return new PackageInfo();
+                        }
+                    }
+                }
+                return method.invoke(iPackageManager, args);
+            }
+        });
+        Field sPackageManager = mActivityThreadClass.getDeclaredField("sPackageManager");
+        sPackageManager.setAccessible(true);
+        sPackageManager.set(currentActivityThread, iPackageManagerInterface);
     }
 
     /**
@@ -327,4 +359,18 @@ public class Applications extends Application {
         });
     }
 
+    public AssetManager getAssetManager() {
+        if (assetManager != null) {
+            return assetManager;
+        }
+        return super.getAssets();
+    }
+
+    @Override
+    public Resources getResources() {
+        if (resources != null) {
+            return resources;
+        }
+        return super.getResources();
+    }
 }

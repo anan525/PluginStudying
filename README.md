@@ -64,7 +64,8 @@ zygote进程里面  zygoteinit()就会启动bootclassloader 和 pathclassloader
 使用loadApk的方式:
       handlerLaunchActivity时候,会getPackageInfo获取到LoadedApk对象（mPackager），然后用loadedApk对象里面的classLoader给
  mInstrumentaton去newActivity，这里自定义插件的loadApk，设置插件classLoader,然后将loadApk加入到缓存中
-
+       跳过pms检测，hook  IPackageManager的 getPackageInfo 返回一个不为空的packageInfor
+       (虽然绕过了，但是测试发现总是报resourceid找不到啥的)
 
 
 

@@ -14,4 +14,20 @@ public class Caculate_MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_caculate_main);
     }
+
+    @Override
+    public Resources getResources() {
+        if (getApplication() != null && getApplication().getResources() != null) {
+            return getApplication().getResources();
+        }
+        return super.getResources();
+    }
+
+    @Override
+    public AssetManager getAssets() {
+        if (getApplication() != null && getApplication().getAssets() != null) {
+            return getApplication().getAssets();
+        }
+        return super.getAssets();
+    }
 }
