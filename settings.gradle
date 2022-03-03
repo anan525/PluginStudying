@@ -1,3 +1,4 @@
+include ':plugin_caculate'
 include ':plugin_calanda'
 include ':pluginrule'
 include ':app'

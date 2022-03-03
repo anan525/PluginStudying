@@ -202,4 +202,16 @@ public class PluginManager {
         return className.substring(0, i);
     }
 
+    public void getActivityInfor(Context context, String className) throws Exception {
+        //1.获取PackageParser
+        Class<?> mPackageParserClass = Class.forName("android.content.pm.PackageParser");
+        Object mPackageParser = mPackageParserClass.newInstance();
+        //2.PackageParser的方法parsePackage
+        Method parsePackage = mPackageParserClass.getDeclaredMethod("parsePackage", File.class, int.class);
+
+        String path = context.getDataDir().getPath() + File.separator + "Plugins" + File.separator + "plugin_caculate-debug.apk";
+
+        //调用parsePackage 获取到package对象
+        Object mPackage = parsePackage.invoke(mPackageParser, new File(path), PackageManager.GET_ACTIVITIES);
+    }
 }

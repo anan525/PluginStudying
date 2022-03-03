@@ -2,20 +2,38 @@ package com.pluginstudy;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 
+import com.pluginrule.PluginManager;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
+
+import dalvik.system.BaseDexClassLoader;
+import dalvik.system.DexClassLoader;
+import dalvik.system.PathClassLoader;
 
 /**
  * Copyright (c) 2021-.
@@ -49,10 +67,15 @@ import java.util.List;
  */
 public class Applications extends Application {
 
+    public static Applications instance;
+    private BaseDexClassLoader dexClassLoader;
+    private AssetManager assetManager;
+    private Resources resources;
+
     @Override
     public void onCreate() {
         super.onCreate();
-
+        instance = this;
         try {
             //使用宿主替换要跳转的activity
             hookStartActivity();
@@ -61,6 +84,136 @@ public class Applications extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+    }
+
+    public void hookLoadApk(String name, String packageName) throws Exception {
+
+        Class<?> mActivityThreadClass = Class.forName("android.app.ActivityThread");
+        Method currentActivityThreadMethod = mActivityThreadClass.
+                getDeclaredMethod("currentActivityThread");
+        Object currentActivityThread = currentActivityThreadMethod.invoke(null);
+
+        Field mPackagesField = mActivityThreadClass.getDeclaredField("mPackages");
+        mPackagesField.setAccessible(true);
+        //activityThread 的mPackages插入 插件的自定义loadedapk
+        ArrayMap mpackages = (ArrayMap) mPackagesField.get(currentActivityThread);
+
+        Object loadApk = getLoadApk(currentActivityThread, name, packageName);
+        //设置里面的classLoader
+
+        //设置loadedAPk
+        WeakReference weakReference = new WeakReference(loadApk);
+        Object put = mpackages.put(packageName, weakReference);
+    }
+
+    /**
+     * 自定义loadedApk
+     *
+     * @param currentActivityThread
+     * @return
+     */
+    private Object getLoadApk(Object currentActivityThread, String name, String packageName) throws Exception {
+        Class<?> compatibilityInfoClass = Class.forName("android.content.res.CompatibilityInfo");
+        Method getPackageInfoNoCheckMethod = currentActivityThread.getClass().getDeclaredMethod("getPackageInfoNoCheck",
+                ApplicationInfo.class, compatibilityInfoClass);
+        //1.获取applicationinfor
+        Class<?> packageParserClass = Class.forName("android.content.pm.PackageParser");
+        Method parsePackageMethod = packageParserClass.getDeclaredMethod("parsePackage", File.class, int.class);
+        parsePackageMethod.setAccessible(true);
+
+        String path = getDataDir().getPath() + File.separator + "Plugins" + File.separator + name;
+        File file = new File(path);
+        if (!file.exists()) {
+            throw new FileNotFoundException("没找到file");
+        }
+        Class<?> packageUserStateClass = Class.forName("android.content.pm.PackageUserState");
+        Object mPackage = parsePackageMethod.invoke(packageParserClass.newInstance(), file, PackageManager.GET_ACTIVITIES);
+        Method generateApplicationInfoMethod = packageParserClass.
+                getDeclaredMethod("generateApplicationInfo", mPackage.getClass(), int.class, packageUserStateClass);
+        generateApplicationInfoMethod.setAccessible(true);
+        Object mApplicationInfor = generateApplicationInfoMethod.invoke(null, mPackage,
+                PackageManager.GET_ACTIVITIES, packageUserStateClass.newInstance());
+        //2.获取compatibilityInfoClass
+        Object compatibilityInfo = compatibilityInfoClass.getDeclaredField("DEFAULT_COMPATIBILITY_INFO").get(null);
+
+        Object loadedApk = getPackageInfoNoCheckMethod.invoke(currentActivityThread, mApplicationInfor, compatibilityInfo);
+
+        File dexFile = getDir("dex", Context.MODE_PRIVATE);
+        //设置classLoader
+        DexClassLoader dexClassLoader = new DexClassLoader(path,
+                /*缓存目录*/dexFile.getAbsolutePath(), null, getClassLoader());
+        Field mClassLoaderFiled = loadedApk.getClass().getDeclaredField("mClassLoader");
+        mClassLoaderFiled.setAccessible(true);
+        mClassLoaderFiled.set(loadedApk, dexClassLoader);
+        return loadedApk;
+    }
+
+    public String hookPlugin(String apkName) throws Exception {
+        //pathList  //2.dexElements
+        ClassLoader classLoader = getClassLoader();
+        Class<?> mBaseDexClassLoaderClass = Class.forName("dalvik.system.BaseDexClassLoader");
+        Field pathListField = mBaseDexClassLoaderClass.getDeclaredField("pathList");
+        pathListField.setAccessible(true);
+        Object mPathList = pathListField.get(classLoader);//mPathList对象
+        //获取dexElements[]
+        Field dexElementsField = mPathList.getClass().getDeclaredField("dexElements");
+        dexElementsField.setAccessible(true);
+        Object dexElements = dexElementsField.get(mPathList);
+
+
+        File dataDir = getDataDir();
+
+        String dir = dataDir.getPath() + File.separator + "Plugins";
+
+        File apkDir = new File(dir);
+        if (!apkDir.exists()) {
+            boolean mkdirs = apkDir.mkdirs();
+            Log.e("ces", "" + mkdirs);
+        }
+        String path = dir + File.separator + apkName;
+        File apkFile = new File(path);
+        if (!apkFile.exists()) {
+            throw new FileNotFoundException("没找到apk");
+        }
+
+
+        dexClassLoader = new BaseDexClassLoader(path, apkDir, null, classLoader);
+        Field pathListPluginField = dexClassLoader.getClass().getDeclaredField("pathList");
+        pathListPluginField.setAccessible(true);
+        Object mPluginPathList = pathListPluginField.get(dexClassLoader);//mPathList对象
+        //获取dexElements[]
+        Field mPluginDexElements = mPluginPathList.getClass().getDeclaredField("dexElements");
+        mPluginDexElements.setAccessible(true);
+        Object mPluginDexElement = mPluginDexElements.get(mPluginPathList);
+
+        int length = Array.getLength(dexElements);
+        int pluginLength = Array.getLength(mPluginDexElement);
+        //合并
+        Object newDexElement = Array.newInstance(dexElements.getClass().getComponentType(), length + pluginLength);
+        for (int i = 0; i < length + pluginLength; i++) {
+            if (i < length) {
+                Array.set(newDexElement, i, Array.get(dexElements, i));
+            } else {
+                Array.set(newDexElement, i, Array.get(mPluginDexElement, i - length));
+            }
+        }
+        //设置进去
+        dexElementsField.set(mPathList, newDexElement);
+
+        //资源文件
+        doLoadPluginLayout(path);
+
+        return path;
+    }
+
+    private void doLoadPluginLayout(String path) throws Exception {
+        assetManager = AssetManager.class.newInstance();
+        Method addAssetPath = assetManager.getClass().getMethod("addAssetPath", String.class);
+        addAssetPath.setAccessible(true);
+        int invoke = (int) addAssetPath.invoke(assetManager, path);//apks
+
+        resources = new Resources(assetManager, getResources().getDisplayMetrics(), getResources().getConfiguration());
     }
 
     @SuppressLint("WrongConstant")
@@ -86,13 +239,19 @@ public class Applications extends Application {
                     if (args.length > 3) {
                         Object arg = args[3];
                         if (arg != null && arg instanceof Intent) {
-                            String className = ((Intent) arg).getComponent().getClassName();
-                            if (className.equals(TestActivity.class.getName())) {
-                                //找到了
+                            //找到了
+                            String packageName = ((Intent) arg).getPackage();
+                            ComponentName component = ((Intent) arg).getComponent();
+                            String packageName1 = "";
+                            if (component != null) {
+                                packageName1 = component.getPackageName();
+                            }
+                            if (("" + packageName).equals("com.voyah.plugin_caculate") || packageName1.equals("com.voyah.plugin_caculate")) {
                                 Intent intent = new Intent(Applications.this, ProxyActivity.class);
                                 intent.putExtra("acturallIntent", (Intent) arg);
                                 args[3] = intent;
                             }
+
                         }
                     }
                 }
@@ -138,10 +297,21 @@ public class Applications extends Application {
                             Field mIntentField = launchActivityItem.getClass().getDeclaredField("mIntent");
                             mIntentField.setAccessible(true);
                             Intent intent = (Intent) mIntentField.get(launchActivityItem);
-
                             if (intent.hasExtra("acturallIntent")) {
-                                Parcelable acturallIntent = intent.getParcelableExtra("acturallIntent");
+                                //需要修改launchActivityItem的activityInfor
+                                Field mInfoFiled = launchActivityItem.getClass().getDeclaredField("mInfo");
+                                mInfoFiled.setAccessible(true);
+                                ActivityInfo activityInfo = (ActivityInfo) mInfoFiled.get(launchActivityItem);
+
+                                Intent acturallIntent = intent.getParcelableExtra("acturallIntent");
                                 mIntentField.set(launchActivityItem, acturallIntent);
+
+                                String className = acturallIntent.getComponent().getClassName();
+                                String packageName = acturallIntent.getComponent().getPackageName();
+                                activityInfo.packageName = packageName;
+                                activityInfo.applicationInfo.packageName = packageName;
+
+
                             }
 
                         }
@@ -156,4 +326,5 @@ public class Applications extends Application {
             return true;
         });
     }
+
 }

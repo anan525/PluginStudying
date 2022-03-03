@@ -40,6 +40,17 @@ public class ApkBean {
 
     private String packageName;
 
+    private int type;
+
+    public int getType() {
+        return type;
+    }
+
+    public ApkBean setType(int type) {
+        this.type = type;
+        return this;
+    }
+
     public String getPackageName() {
         return packageName;
     }
@@ -47,6 +58,12 @@ public class ApkBean {
     public ApkBean setPackageName(String packageName) {
         this.packageName = packageName;
         return this;
+    }
+
+    public ApkBean(int iconResource, String name, int type) {
+        this.iconResource = iconResource;
+        this.name = name;
+        this.type = type;
     }
 
     public ApkBean(int iconResource, String name, String apkName, String packageName) {

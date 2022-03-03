@@ -1,5 +1,7 @@
 package com.pluginstudy;
 
+import android.app.Activity;
+import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -56,10 +58,13 @@ public class ApksAdapter extends RecyclerView.Adapter {
     }
 
     private List<ApkBean> apkBeans = new ArrayList<>();
+    private int width;
 
-    public ApksAdapter(List<ApkBean> apkBeans) {
+    public ApksAdapter(List<ApkBean> apkBeans, int width) {
+        this.width = width;
         this.apkBeans = apkBeans;
     }
+
 
     @NonNull
     @Override
@@ -74,6 +79,9 @@ public class ApksAdapter extends RecyclerView.Adapter {
         viewHolder.ivIcon.setImageResource(apkBean.getIconResource());
         viewHolder.tvTitle.setText(apkBean.getName());
 
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(width / 4, ViewGroup.LayoutParams.WRAP_CONTENT);
+        viewHolder.clRoot.setLayoutParams(layoutParams);
+
         viewHolder.clRoot.setOnClickListener(l -> {
             if (onItemClickListener != null) {
                 onItemClickListener.onItemClick(position, apkBean);
@@ -87,7 +95,7 @@ public class ApksAdapter extends RecyclerView.Adapter {
     }
 
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         private ConstraintLayout clRoot;
         private ImageView ivIcon;
         private TextView tvTitle;

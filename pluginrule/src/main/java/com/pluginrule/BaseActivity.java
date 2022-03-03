@@ -50,7 +50,6 @@ public class BaseActivity extends Activity implements ActivityInterfaces {
     @SuppressLint("MissingSuperCall")
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-
     }
 
     @SuppressLint("MissingSuperCall")

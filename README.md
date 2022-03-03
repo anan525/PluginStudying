@@ -41,7 +41,30 @@ hook重点在ActivityTaskManager的静态变量IActivityTaskManagerSingleton 反
    api30时候: handleLaunchActivity()调用是在launchActivityItem
         ams事务-->app（159）msg.obj是ClientTransaction对象，  ClientTransaction的mActivityCallbacks里面就是一个包含
    launchActivityItem的arraylist ,反射拿到mActivityCallbacks,然后获取launchActivityItem ,反射aunchActivityItem的intent
-   将intent修改成Testactivity
+   将intent修改成Testactivity，然后还要将launchActivityItem里面的包名修改成指定的包名
+
+
+class加载过程：
+   start新activity时候---ams---------handlerlauchActivity-----Instrumentation.newActivity()----dexclassLoader.loadClass
+  newActivity时候，最终是PathClassLoader的findclass-->basedexclassloader的findclass---dexpathlist.findclass
+  在dexpathlist里面就有遍历其属性,dexelements(classdexes)
+android的classloader有 1.bootclassloader 2.dexpathclassloader 3.pathclassloader
+1:系统预加载使用的 2：运行程序（系统，应用）加载class 3:加载apk,zip等文件
+系统内核启动第一个进程init(),init()进程孵化出其子类zygote进程，zygote进程启动systemserver，由systemserver启动服务ams,pms
+zygote进程里面  zygoteinit()就会启动bootclassloader 和 pathclassloader
+
+使用hook形式加载插件---融合DexElement
+      mInstrumentation的newActivity里面是调用的BaseDexClassLoader的loadClass
+   loadclass最终从dexElements里面查找到对应的class然后newintance()
+        BaseDexClassLoader里面的属性pathList（pathlist对象）
+        pathlist对象里面的dexElements 获取elements数组
+    同时获取宿主和插件的，然后将其融合，最后设置给dexElements
+ 缺點：插件越多dexelement内存越大
+
+使用loadApk的方式:
+      handlerLaunchActivity时候,会getPackageInfo获取到LoadedApk对象（mPackager），然后用loadedApk对象里面的classLoader给
+ mInstrumentaton去newActivity，这里自定义插件的loadApk，设置插件classLoader,然后将loadApk加入到缓存中
+
 
 
 
@@ -54,5 +77,8 @@ view的绘制过程是在类ViewRootImpl中完成
     --->new ViewRootImpl.setview()---> doTarversals()
 
   而windmanagerimpl在handleresumeActivity()触发
+
+
+
 
 
