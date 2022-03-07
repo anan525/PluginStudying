@@ -1,9 +1,5 @@
 package com.pluginstudy;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -14,11 +10,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.pluginrule.ActivityInterfaces;
 import com.pluginrule.PluginBean;
 import com.pluginrule.PluginManager;
 
-public class ProxyActivity extends Activity {
+public class ProxyActivity extends AppCompatActivity {
 
     private ActivityInterfaces targetActivity;
     private ProxyReceriver proxyReceriver = new ProxyReceriver();

@@ -28,6 +28,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
@@ -82,11 +83,14 @@ public class Applications extends Application {
             hookStartActivity();
             //跳转完后要指定回来
             hookRebaseActivity();
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
+
 
     public void hookLoadApk(String name, String packageName) throws Exception {
         String path = getDataDir().getPath() + File.separator + "Plugins" + File.separator + name;
@@ -115,7 +119,17 @@ public class Applications extends Application {
         //                        PackageManager.MATCH_DEBUG_TRIAGED_MISSING,
         //                        UserHandle.myUserId());******************************//
         //需要绕过getPackageInfoAsUserCached返回的packageInfo 插件会返回null
-        Method getPackageManagerMethod = mActivityThreadClass.getDeclaredMethod("getPackageManager");
+        hookPMDetection(packageName);
+        return;
+    }
+
+    private void hookPMDetection(String packageName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException {
+        Class<?> activityThreadClass = Class.forName("android.app.ActivityThread");
+        Method currentActivityThreadMethod = activityThreadClass.getDeclaredMethod("currentActivityThread");
+        currentActivityThreadMethod.setAccessible(true);
+        Object activityThread = currentActivityThreadMethod.invoke(null);
+
+        Method getPackageManagerMethod = activityThreadClass.getDeclaredMethod("getPackageManager");
         getPackageManagerMethod.setAccessible(true);
         Object iPackageManager = getPackageManagerMethod.invoke(null);
 
@@ -134,9 +148,9 @@ public class Applications extends Application {
                 return method.invoke(iPackageManager, args);
             }
         });
-        Field sPackageManager = mActivityThreadClass.getDeclaredField("sPackageManager");
+        Field sPackageManager = activityThreadClass.getDeclaredField("sPackageManager");
         sPackageManager.setAccessible(true);
-        sPackageManager.set(currentActivityThread, iPackageManagerInterface);
+        sPackageManager.set(activityThread, iPackageManagerInterface);
     }
 
     /**
@@ -181,7 +195,7 @@ public class Applications extends Application {
         return loadedApk;
     }
 
-    public String hookPlugin(String apkName) throws Exception {
+    public String hookPlugin(String apkName, String packageName) throws Exception {
         //pathList  //2.dexElements
         ClassLoader classLoader = getClassLoader();
         Class<?> mBaseDexClassLoaderClass = Class.forName("dalvik.system.BaseDexClassLoader");
@@ -236,6 +250,10 @@ public class Applications extends Application {
         //资源文件
         doLoadPluginLayout(path);
 
+
+        hookPMDetection(packageName);
+
+
         return path;
     }
 
@@ -246,6 +264,7 @@ public class Applications extends Application {
         int invoke = (int) addAssetPath.invoke(assetManager, path);//apks
 
         resources = new Resources(assetManager, getResources().getDisplayMetrics(), getResources().getConfiguration());
+
     }
 
     @SuppressLint("WrongConstant")
@@ -338,11 +357,10 @@ public class Applications extends Application {
                                 Intent acturallIntent = intent.getParcelableExtra("acturallIntent");
                                 mIntentField.set(launchActivityItem, acturallIntent);
 
-                                String className = acturallIntent.getComponent().getClassName();
+//                                String className = acturallIntent.getComponent().getClassName();
                                 String packageName = acturallIntent.getComponent().getPackageName();
-                                activityInfo.packageName = packageName;
+//                                activityInfo.packageName = packageName;
                                 activityInfo.applicationInfo.packageName = packageName;
-
 
                             }
 

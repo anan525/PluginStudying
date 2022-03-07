@@ -21,7 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ProxyActivity" />
+        <activity
+            android:name=".ProxyActivity"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
         <service android:name=".ProxyService" />
 

@@ -40,12 +40,14 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView rvList;
     private View viewById;
 
+    private float MaxDy = 100;
+    private float scrollDy = 0;
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         rvList = findViewById(R.id.rv_list);
 //        List<ApkGroups> data = getData();
 //        rvList.setLayoutManager(new LinearLayoutManager(this));
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 //            intent.putExtra("packageName", apkBean.getPackageName());
 //            startActivity(intent);
             Intent intent = new Intent();
-            intent.setComponent(new ComponentName("com.voyah.plugin_caculate", "com.voyah.plugin_caculate.Caculate_MainActivity"));
+            intent.setComponent(new ComponentName("com.voyah.plugin_caculate", "com.voyah.plugin_caculate.PluginActivity"));
             startActivity(intent);
         });
 
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
         RxPermissions rxPermissions = new RxPermissions(this);
 
-        viewById = findViewById(R.id.bt_loadApk);
+        this.viewById = findViewById(R.id.bt_loadApk);
         viewById.setOnClickListener(l -> {
             //加载apk信息
             rxPermissions.requestEach(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -76,14 +78,8 @@ public class MainActivity extends AppCompatActivity {
                         if (permission.granted) {
                             pluginList.clear();
 
-                            try {
-                                Applications.instance.hookLoadApk("plugin_caculate-debug.apk", "com.voyah.plugin_caculate");
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-//                            String apkName = apkBean.getApkName();
-//                            String s = Applications.instance.hookPlugin(apkName);
+                            String apkName = apkBean.getApkName();
+                            Applications.instance.hookLoadApk(apkName, apkBean.getPackageName());
 //                            if (!TextUtils.isEmpty(s) && !pluginList.contains(apkBean)) {
                             //更新view
                             pluginList.add(apkBean);
@@ -100,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
     private List<ApkGroups> getData() {
         List<ApkGroups> apkGroupsList = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 10; i++) {
             int type = i % 2;
             String name = "日常生活" + i;
             List<ApkBean> apkBeans = new ArrayList<>();
